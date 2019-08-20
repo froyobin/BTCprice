@@ -129,5 +129,5 @@ if __name__ == "__main__":
     x = threading.Thread(target=queryandput, args=(minimaltrade,))
     x.start()
 
-    app.run()
+    app.run(host="0.0.0.0", port=4356)
     x.join()

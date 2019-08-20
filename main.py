@@ -129,5 +129,5 @@ if __name__ == "__main__":
     x = threading.Thread(target=queryandput, args=(minimaltrade,))
     x.start()
 
-    app.run(host="0.0.0.0", port=4356)
+    app.run(host="0.0.0.0", port=4356, ssl_context=('./cert/cert.pem', './cert/key.pem'))
     x.join()

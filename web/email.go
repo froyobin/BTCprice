@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -106,12 +105,13 @@ func queryprice(url string) float64 {
 	}
 
 	result := string(respBody)
-	resultarr := strings.Split(result, ":")
-	price := resultarr[len(resultarr)-1]
+   	resultmap := make(map[string]interface{})
 
-	price = price[1 : len(price)-1]
-
-	priced, err := strconv.ParseFloat(price, 32)
+        err = json.Unmarshal([]byte(result), &resultmap)
+	if err != nil{
+	    fmt.Println(err)
+	}
+	priced := resultmap["price"].(float64)
 
 	return priced
 }
@@ -187,17 +187,17 @@ func main() {
 		price := queryprice(url)
 		fmt.Println(price)
 		if price > priceset {
-			prices := fmt.Sprintf("%f", price)
+			prices := fmt.Sprintf("price: %f, and we already send the email", price)
 			if sendfreq == false {
 				sendfreq = true
 				fmt.Println(prices)
-				fmt.Println(srv)
 				sendemail(prices, srv)
 				fmt.Println("we send the email")
 			}
 
 		}
-		time.Sleep(time.Second * 10)
+		// now we sleep for 3 minutes and restart the query
+		time.Sleep(time.Second * 180)
 
 	}
 

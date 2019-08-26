@@ -10,7 +10,7 @@ from flask import Flask
 import json
 from flask_cors import CORS
 
-SLEEPTIME = 60
+SLEEPTIME = 120
 ITEMSIZE = 24 * 60*60
 
 url_template = "https://otc-api.huobi.br.com/v1/data/trade-market?country=37" \
@@ -133,12 +133,7 @@ def ReturnPack():
     beautidatetime = dt.strftime("%H:%M:%S")
     package = {"time": beautidatetime, "price": record[2]}
 
-    response = app.response_class(
-        response=json.dumps(package),
-        status=200,
-        mimetype='application/json'
-    )
-    return response
+    return jsonify(package),200
 
 
 if __name__ == "__main__":

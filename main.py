@@ -1,5 +1,7 @@
 import requests
 import sqlite3
+from flask import request
+from flask import jsonify
 import time
 import datetime
 import threading
@@ -8,8 +10,8 @@ from flask import Flask
 import json
 from flask_cors import CORS
 
-SLEEPTIME = 5
-ITEMSIZE = 24*60
+SLEEPTIME = 60
+ITEMSIZE = 24 * 60*60
 
 url_template = "https://otc-api.huobi.br.com/v1/data/trade-market?country=37" \
                "&currency=1&payMethod=0" \
@@ -74,20 +76,15 @@ def Query(conn):
     resultrecords = c.fetchall()
 
     if len(resultrecords) > ITEMSIZE:
-        willdelete = resultrecords[-1]
-        clause = "DELETE FROM stocks WHERE date={}".format(willdelete[0])
-        c.execute(clause)
+        shoulddelete = len(resultrecords) - ITEMSIZE
+        willdelete = resultrecords[:shoulddelete]
 
-    # tz = pytz.timezone('Australia/Melbourne')
-    # dt = datetime.datetime.fromtimestamp(resultrecords[0][0], tz)
-    # print(dt)
-    # tz = pytz.timezone('Australia/Melbourne')
-    # dt = datetime.datetime.fromtimestamp(resultrecords[1][0], tz)
-    # print(dt)
+        for each in willdelete:
+            clause = "DELETE FROM stocks WHERE date={}".format(each[0])
+            c.execute(clause)
+
     conn.commit()
-
-    return resultrecords[0]
-
+    return resultrecords
 
 def queryandput(minimaltrade):
     conn = sqlite3.connect("local.db")
@@ -103,10 +100,33 @@ app = Flask(__name__)
 CORS(app)
 
 
+@app.route('/range', methods=['POST'])
+def HandleRequest():
+    data = request.get_json()
+    parsed_json = (json.loads(data))
+    conn = sqlite3.connect("local.db")
+    records = Query(conn)
+    conn.close()
+
+    packages = []
+    counter = parsed_json['range']
+    if counter > len(records):
+        counter = len(records)
+    for i in range(0, counter):
+        record = records[i]
+        tz = pytz.timezone('Australia/Melbourne')
+        dt = datetime.datetime.fromtimestamp(record[0], tz)
+        beautidatetime = dt.strftime("%H:%M:%S")
+        package = {"time": beautidatetime, "price": record[2]}
+        packages.append(package)
+
+    return jsonify(packages), 200
+
+
 @app.route('/')
 def ReturnPack():
     conn = sqlite3.connect("local.db")
-    record = Query(conn)
+    record = Query(conn)[0]
     conn.close()
     tz = pytz.timezone('Australia/Melbourne')
     dt = datetime.datetime.fromtimestamp(record[0], tz)
@@ -122,12 +142,24 @@ def ReturnPack():
 
 
 if __name__ == "__main__":
-    currenttime = time.time()
-    output = datetime.datetime.utcfromtimestamp(currenttime)
+    url = "https://testnet-explorer.binance.org/tx" \
+          "/E03501D4ABFD3A6E892CFCDFB4C2495B18448C125C0640D8C072CA9D9F80C9CC"
+    response = requests.get(url)
+    print(response.content)
+    response.encoding = 'utf-8'
+    print(response)
+    # data = response.json()
+    # print(data)
+    # data = response.json()
+    # print(data)
+
+    # currenttime = time.time()
+    # output = datetime.datetime.utcfromtimestamp(currenttime)
     minimaltrade = 2000
 
     x = threading.Thread(target=queryandput, args=(minimaltrade,))
     x.start()
 
-    app.run(host="0.0.0.0", port=4356, ssl_context=('./cert/cert.pem', './cert/key.pem'))
+    app.run(host="0.0.0.0", port=4356,
+            ssl_context=('./cert/cert.pem', './cert/key.pem'))
     x.join()

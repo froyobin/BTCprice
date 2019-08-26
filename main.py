@@ -145,16 +145,8 @@ if __name__ == "__main__":
     url = "https://testnet-explorer.binance.org/tx" \
           "/E03501D4ABFD3A6E892CFCDFB4C2495B18448C125C0640D8C072CA9D9F80C9CC"
     response = requests.get(url)
-    print(response.content)
     response.encoding = 'utf-8'
-    print(response)
-    # data = response.json()
-    # print(data)
-    # data = response.json()
-    # print(data)
-
-    # currenttime = time.time()
-    # output = datetime.datetime.utcfromtimestamp(currenttime)
+   
     minimaltrade = 2000
 
     x = threading.Thread(target=queryandput, args=(minimaltrade,))

@@ -116,7 +116,8 @@ def HandleRequest():
         record = records[i]
         tz = pytz.timezone('Australia/Melbourne')
         dt = datetime.datetime.fromtimestamp(record[0], tz)
-        beautidatetime = dt.strftime("%H:%M:%S")
+        beautidatetime = dt.strftime("%b-%d %H:%M:%S")
+        print(beautidatetime)
         package = {"time": beautidatetime, "price": record[2]}
         packages.append(package)
 

@@ -6,21 +6,25 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import matplotlib.dates as mdates
 import datetime
+import urllib3
+import sys
+import certifi
 
 left, width = .05, .5
 bottom, height = .25, .5
 right = left + width
 top = bottom + height
-
 pricelist = []
 timelist = []
 timelistdate = []
 records = []
 fig, ax = plt.subplots()
-url = "https://127.0.0.1:4356/range"
+mintarget = 0
+maxtarget = 0
+url = "https://25.74.110.162:4356/range"
 itemsnum = 500
 
-time_text = ax.text(right,top, '', transform=ax.transAxes,color='red')
+time_text = ax.text(left,bottom, '', transform=ax.transAxes,color='red')
 
 
 ln, = plt.plot(timelist, pricelist)
@@ -55,7 +59,8 @@ def findmaxmin(price, timelist):
     return [maxval, minval], [timemax, timemin]
 
 def showinit():
-   
+    pricelist = []
+    timelistdate = []
     for each in records:
         pricelist.append(each['price'])
         try:
@@ -102,15 +107,39 @@ def update(frame):
     # myFmt = mdates.DateFormatter('%d %H:%M:%S')
     # plt.gca().xaxis.set_major_formatter(myFmt)
     # ln, = plt.plot(timelist, pricelist, 'ro')
+    print(len(pricelist))
     ln.set_data(timelist, pricelist)
+    if pricelist[-1] > maxtarget:
+        msg = "Good news, the price now is {}".format(pricelist[-1])
+        post_to_slack(msg)
 
+    if pricelist[-1] < mintarget:
+        msg = "Bad news, the price now is {}".format(pricelist[-1])
+        post_to_slack(msg)
 
     return ln, time_text
 
 
+
+
+
+
+def post_to_slack(message):
+    webhook_url = "https://hooks.slack.com/services/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"
+    requests.post(webhook_url, json={'text': message})
+    # http = urllib3.ProxyManager(proxy_url=proxy, cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
+    # slack_url = "https://hooks.slack.com/services/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"
+    
+    # encoded_data = json.dumps({'text': message}).encode('utf-8')
+    # response = http.request("POST", slack_url, body=encoded_data, headers={'Content-Type': 'application/json'})
+    # print(str(response.status) + str(response.data))
+
+
 if __name__ == "__main__":
+    mintarget = float(sys.argv[1])
+    maxtarget = float(sys.argv[2])
     records = query_range(url, itemsnum)
     timelist = [i for i in range(0, len(records))]
     FuncAnimation(fig, update, frames=timelist,
-                    init_func=showinit, blit=True, interval=1000)
+                    init_func=showinit, blit=True, interval=10000)
     plt.show()

@@ -21,7 +21,7 @@ records = []
 fig, ax = plt.subplots()
 mintarget = 0
 maxtarget = 0
-url = "https://25.74.110.162:4356/range"
+url = "https://192.168.1.124:4356/range"
 itemsnum = 500
 
 time_text = ax.text(left,bottom, '', transform=ax.transAxes,color='red')
@@ -44,7 +44,7 @@ def query_range(url, itemsnum):
     # print(resultlist)
 
 def findmaxmin(price, timelist):
-    npprice = np.array(pricelist)
+    npprice = np.array(price)
     minval = np.ndarray.min(npprice)
     maxval = np.ndarray.max(npprice)
     minindex = np.where(npprice == np.amin(npprice))
@@ -59,6 +59,8 @@ def findmaxmin(price, timelist):
     return [maxval, minval], [timemax, timemin]
 
 def showinit():
+    global pricelist
+    global timelistdate
     pricelist = []
     timelistdate = []
     for each in records:
@@ -68,7 +70,6 @@ def showinit():
         except ValueError as ve:
             print('ValueError Raised:', ve)
         timelistdate.append(datetime_object)
-    
     priceret, timeret = findmaxmin(pricelist, timelistdate)
 
     textmsg = "current price {}\n Highest price {} at {}\n Low price {} at {}\n".format(
@@ -79,7 +80,6 @@ def showinit():
     # myFmt = mdates.DateFormatter('%d %H:%M:%S')
     # plt.gca().xaxis.set_major_formatter(myFmt)
     ln, = plt.plot(timelist, pricelist, 'ro')
-
     return ln,  time_text
 
 
@@ -100,15 +100,10 @@ def update(frame):
     
     textmsg = "current price {}\n Highest price {} at {}\n Low price {} at {}\n".format(
         pricelist[-1], priceret[0],timeret[0], priceret[1], timeret[1])
-    time_text.set_text(textmsg)
    
 
-    # plt.gcf().autofmt_xdate()
-    # myFmt = mdates.DateFormatter('%d %H:%M:%S')
-    # plt.gca().xaxis.set_major_formatter(myFmt)
-    # ln, = plt.plot(timelist, pricelist, 'ro')
-    print(len(pricelist))
     ln.set_data(timelist, pricelist)
+    time_text.set_text(textmsg)
     if pricelist[-1] > maxtarget:
         msg = "Good news, the price now is {}".format(pricelist[-1])
         post_to_slack(msg)
